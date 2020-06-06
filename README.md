@@ -1,0 +1,2 @@
+# SwiftyMockyCLI
+SwiftyMocky CLI
