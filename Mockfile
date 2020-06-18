@@ -1,0 +1,16 @@
+sourceryCommand: null
+
+cli.core.tests:
+  sources:
+    include:
+    - ./Sources/SwiftyMockyCLICore
+    exclude:
+    - ./Sources/SwiftyMockyCLICore/Assets
+  output: ./Tests/SwiftyMockyCLICoreTests/Mock.generated.swift
+  targets:
+  - Package.swift/SwiftyMockyCLICore
+  testable:
+  - SwiftyMockyCLICore
+  import:
+  - Foundation
+  - PathKit
