@@ -4,7 +4,7 @@ import SwiftyMocky
 @testable import SwiftyMockyCLICore
 
 final class CommandLineInterfaceTests: XCTestCase {
-    
+
     // MARK: - Properties
 
     static var allTests = [
@@ -51,8 +51,8 @@ final class CommandLineInterfaceTests: XCTestCase {
         Given(factory, .resolveGenerationCommand(root: .any, willReturn: command))
         Given(command, .generate(disableCache: .any, verbose: .any, willThrow: TestError()))
         let errorHandled = expectation(description: "Should handle error")
-        sut.handle = { 
-            XCTAssert($0 is TestError) 
+        sut.handle = {
+            XCTAssert($0 is TestError)
             errorHandled.fulfill()
         }
 
@@ -78,7 +78,7 @@ private extension XCTestCase {
 
     @discardableResult
     func executeCommand(_ arguments: [String]) throws -> String {
-        guard #available(macOS 10.13, *) else { 
+        guard #available(macOS 10.13, *) else {
             throw ExecutionError.nonMatchingSystemRequirements
         }
 

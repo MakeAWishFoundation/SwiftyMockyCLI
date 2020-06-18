@@ -27,8 +27,8 @@ task :assetize do
         # Checkout specified branch/tag
         sh("git clone --single-branch -b #{version} #{swifty_mocky_url} ./Temp")
         # Copy assets
-        sh("cp ./Temp/Sources/Mock/Mock.swifttemplate ./Sources/Templates/Mock.swifttemplate")
-        sh("cp ./Temp/Sources/Prototype/Prototype.swifttemplate ./Sources/Templates/Prototype.swifttemplate")
+        sh("cp ./Temp/Sources/SwiftyMocky/Mock.swifttemplate ./Sources/Templates/Mock.swifttemplate")
+        sh("cp ./Temp/Sources/SwiftyPrototype/Prototype.swifttemplate ./Sources/Templates/Prototype.swifttemplate")
         # Clean temp contents
         sh("rm -rf ./Temp")
         # Assetize template
@@ -53,7 +53,7 @@ task :deploy do
     end
 end
 
-## [ Buid ] ####################################################################
+## [ Build ] ###################################################################
 
 desc "Build CLI"
 task :build do
