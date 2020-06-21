@@ -258,6 +258,7 @@ class Helpers {
     static func extractAttributes(from attributes: [String: SourceryRuntime.Attribute]) -> String {
         return attributes.map { $0.1.description }
         .filter { !["private", "internal", "public", "open", "optional"].contains($0) }
+        .sorted()
         .joined(separator: " ")
     }
 }
@@ -679,6 +680,9 @@ class MethodWrapper {
             let paramsSum = params.map({ "\($0).intValue" }).joined(separator: " + ")
             return "case let .\(prototype)(\(definitions)): return \(paramsSum)"
         }
+    }
+    var assertionName: String {
+        return "case .\(prototype): return \".\(method.selectorName)\(method.parameters.isEmpty ? "()" : "")\""
     }
 
     var returnsSelf: Bool {
@@ -1137,6 +1141,10 @@ class SubscriptWrapper {
     let genericTypesList: [String]
     let genericTypesModifier: String?
 
+    private var methodAttributes: String {
+        return Helpers.extractAttributes(from: self.wrapped.attributes)
+    }
+
     private let noStubDefinedMessage = "Stub return value not specified for subscript. Use given first."
 
     private static var registered: [String: Int] = [:]
@@ -1145,6 +1153,7 @@ class SubscriptWrapper {
     public static func clear() -> String {
         SubscriptWrapper.registered = [:]
         SubscriptWrapper.suffixes = [:]
+        namesWithoutReturnType = [:]
         return ""
     }
     static func register(_ name: String, _ uniqueName: String) {
@@ -1192,7 +1201,9 @@ class SubscriptWrapper {
     func subscriptCall() -> String {
         let get = "\n\t\tget {\(getter())\n\t\t}"
         let set = readonly ? "" : "\n\t\tset {\(setter())\n\t\t}"
-        return "\(uniqueName) {\(get)\(set)\n\t}"
+        var attributes = self.methodAttributes.replacingOccurrences(of:"@objc", with: "")
+        attributes = attributes.isEmpty ? "" : "\(attributes)\n\t"
+        return "\(attributes)\(uniqueName) {\(get)\(set)\n\t}"
     }
     private func getter() -> String {
         let method = ".\(subscriptCasePrefix("get"))(\(parametersForMethodCall()))"
@@ -1210,6 +1221,14 @@ class SubscriptWrapper {
         return "\n\t\t\taddInvocation(\(method))"
     }
 
+    var assertionName: String {
+        return readonly ? assertionName("get") : "\(assertionName("get"))\n\t\t\t\(assertionName("set"))"
+    }
+    private func assertionName(_ accessor: String) -> String {
+        return "case .\(subscriptCasePrefix(accessor)): return " +
+            "\"[\(accessor)] `subscript`\(genericTypesModifier ?? "")[\(parametersForAssertionName())]\""
+    }
+
     // method type
     func subscriptCasePrefix(_ accessor: String) -> String {
         return "\(registrationName(accessor))\(nameSuffix(accessor))"
@@ -1218,7 +1237,9 @@ class SubscriptWrapper {
         return "\(subscriptCasePrefix(accessor))(\(parametersForMethodTypeDeclaration(set: accessor == "set")))"
     }
     func subscriptCases() -> String {
-        return readonly ? "case \(subscriptCaseName("get"))" : "case \(subscriptCaseName("get"))\n\t\tcase \(subscriptCaseName("set"))"
+        let availability = wrapped.attributes["available"]?.description
+        let attributes = availability != nil ? "\(availability!)\n\t\t" : ""
+        return readonly ? "\(attributes)case \(subscriptCaseName("get"))" : "\(attributes)case \(subscriptCaseName("get"))\n\t\t\(attributes)case \(subscriptCaseName("set"))"
     }
     func equalCase(_ accessor: String) -> String {
         var lhsParams = wrapped.parameters.map { "lhs\($0.name.capitalized)" }.joined(separator: ", ")
@@ -1251,7 +1272,9 @@ class SubscriptWrapper {
     // Given
     func givenConstructorName() -> String {
         let returnTypeString = returnsSelf ? replaceSelf : TypeWrapper(wrapped.returnTypeName).stripped
-        return "public static func `subscript`\(genericTypesModifier ?? "")(\(parametersForProxySignature()), willReturn: \(returnTypeString)...) -> SubscriptStub"
+        var attributes = self.methodAttributes.replacingOccurrences(of:"@objc", with: "")
+        attributes = attributes.isEmpty ? "" : "\(attributes)\n\t\t"
+        return "\(attributes)public static func `subscript`\(genericTypesModifier ?? "")(\(parametersForProxySignature()), willReturn: \(returnTypeString)...) -> SubscriptStub"
     }
     func givenConstructor() -> String {
         return "return Given(method: .\(subscriptCasePrefix("get"))(\(parametersForProxyInit())), products: willReturn.map({ StubProduct.return($0 as Any) }))"
@@ -1261,7 +1284,9 @@ class SubscriptWrapper {
     func verifyConstructorName(set: Bool = false) -> String {
         let returnTypeString = returnsSelf ? replaceSelf : nestedType
         let returning = set ? "" : returningParameter(true, true)
-        return "public static func `subscript`\(genericTypesModifier ?? "")(\(parametersForProxySignature())\(returning)\(set ? ", set newValue: \(returnTypeString)" : "")) -> Verify"
+        var attributes = self.methodAttributes.replacingOccurrences(of:"@objc", with: "")
+        attributes = attributes.isEmpty ? "" : "\(attributes)\n\t\t"
+        return "\(attributes)public static func `subscript`\(genericTypesModifier ?? "")(\(parametersForProxySignature())\(returning)\(set ? ", set newValue: \(returnTypeString)" : "")) -> Verify"
     }
     func verifyConstructor(set: Bool = false) -> String {
         return "return Verify(method: .\(subscriptCasePrefix(set ? "set" : "get"))(\(parametersForProxyInit(set: set))))"
@@ -1316,6 +1341,9 @@ class SubscriptWrapper {
     private func parametersForProxySignature(set: Bool = false) -> String {
         return wrappedParameters.map { "\($0.labelAndName()): \($0.nestedType)" }.joined(separator: ", ") + (set ? ", set newValue: \(nestedType)" : "")
     }
+    private func parametersForAssertionName() -> String {
+        return wrappedParameters.map { "\($0.labelAndName())" }.joined(separator: ", ")
+    }
     private func parametersForMethodCall(set: Bool = false) -> String {
         let generics = getGenerics()
         let params = wrappedParameters.map { $0.wrappedForCalls(generics) }.joined(separator: ", ")
@@ -1360,6 +1388,13 @@ class VariableWrapper {
             "\(getter)" +
             "\(setter)" +
         "\n\t}"
+    }
+    var assertionName: String {
+        var result = "case .\(propertyCaseGetName): return \"[get] .\(variable.name)\""
+        if !readonly {
+            result += "\n\t\t\tcase .\(propertyCaseSetName): return \"[set] .\(variable.name)\""
+        }
+        return result
     }
 
     var privatePrototype: String {
@@ -1613,6 +1648,14 @@ _%>
                 <%_ } %> <%_ -%>
             }
         }
+        func assertionName() -> String {
+            switch self { <%_ for method in wrappedStaticMethodsForMethodType { %>
+            <%= method.assertionName -%><% } %>
+            <%_ for variable in wrappedStaticVariables { -%>
+            <%= variable.assertionName %>
+            <%_ } %>
+            }
+        }
     }
 
     open class StaticGiven: StubbedMethod {
@@ -1708,11 +1751,22 @@ _%>
             <%_ } -%>
             }
         }
+        func assertionName() -> String {
+            switch self { <%_ for method in wrappedMethodsForMethodType { %>
+            <%= method.assertionName -%><% } %>
+            <%_ for variable in wrappedVariables { -%>
+            <%= variable.assertionName %>
+            <%_ } %> <%_ for wrapped in wrappedSubscripts { -%>
+            <%= wrapped.assertionName %>
+            <%_ } -%>
+            }
+        }
     }
     <%_ } else { %>
     fileprivate struct MethodType {
         static func compareParameters(lhs: MethodType, rhs: MethodType, matcher: Matcher) -> Bool { return true }
         func intValue() -> Int { return 0 }
+        func assertionName() -> String { return "" }
     }
     <%_ } -%><%_ -%>
 
@@ -1794,7 +1848,7 @@ _%>
 
     public func verify(_ method: Verify, count: Count = Count.moreOrEqual(to: 1), file: StaticString = #file, line: UInt = #line) {
         let invocations = matchingCalls(method.method)
-        MockyAssert(count.matches(invocations.count), "Expected: \(count) invocations of `\(method.method)`, but was: \(invocations.count)", file: file, line: line)
+        MockyAssert(count.matches(invocations.count), "Expected: \(count) invocations of `\(method.method.assertionName())`, but was: \(invocations.count)", file: file, line: line)
     }
 
     private func addInvocation(_ call: MethodType) {

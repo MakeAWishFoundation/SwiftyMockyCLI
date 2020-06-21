@@ -13,6 +13,7 @@ import PathKit
 
 
 // MARK: - GenerationCommand
+
 open class GenerationCommandMock: GenerationCommand, Mock {
     init(sequencing sequencingPolicy: SequencingPolicy = .lastWrittenResolvedFirst, stubbing stubbingPolicy: StubbingPolicy = .wrap, file: StaticString = #file, line: UInt = #line) {
         SwiftyMockyTestObserver.setup()
@@ -141,6 +142,14 @@ open class GenerationCommandMock: GenerationCommand, Mock {
             case let .m_updateImports__forMockNamed_name(p0): return p0.intValue
             }
         }
+        func assertionName() -> String {
+            switch self {
+            case .m_generate__disableCache_disableCacheverbose_verbose: return ".generate(disableCache:verbose:)"
+            case .m_generate__mockName_mockNamedisableCache_disableCacheverbose_verbosewatch_watch: return ".generate(mockName:disableCache:verbose:watch:)"
+            case .m_updateAllImports: return ".updateAllImports()"
+            case .m_updateImports__forMockNamed_name: return ".updateImports(forMockNamed:)"
+            }
+        }
     }
 
     open class Given: StubbedMethod {
@@ -232,7 +241,7 @@ open class GenerationCommandMock: GenerationCommand, Mock {
 
     public func verify(_ method: Verify, count: Count = Count.moreOrEqual(to: 1), file: StaticString = #file, line: UInt = #line) {
         let invocations = matchingCalls(method.method)
-        MockyAssert(count.matches(invocations.count), "Expected: \(count) invocations of `\(method.method)`, but was: \(invocations.count)", file: file, line: line)
+        MockyAssert(count.matches(invocations.count), "Expected: \(count) invocations of `\(method.method.assertionName())`, but was: \(invocations.count)", file: file, line: line)
     }
 
     private func addInvocation(_ call: MethodType) {
@@ -276,6 +285,7 @@ open class GenerationCommandMock: GenerationCommand, Mock {
 }
 
 // MARK: - InstanceFactory
+
 open class InstanceFactoryMock: InstanceFactory, Mock {
     init(sequencing sequencingPolicy: SequencingPolicy = .lastWrittenResolvedFirst, stubbing stubbingPolicy: StubbingPolicy = .wrap, file: StaticString = #file, line: UInt = #line) {
         SwiftyMockyTestObserver.setup()
@@ -370,6 +380,12 @@ open class InstanceFactoryMock: InstanceFactory, Mock {
             case let .m_resolveGenerationCommand__root_rootmockfile_mockfile(p0, p1): return p0.intValue + p1.intValue
             }
         }
+        func assertionName() -> String {
+            switch self {
+            case .m_resolveGenerationCommand__root_root: return ".resolveGenerationCommand(root:)"
+            case .m_resolveGenerationCommand__root_rootmockfile_mockfile: return ".resolveGenerationCommand(root:mockfile:)"
+            }
+        }
     }
 
     open class Given: StubbedMethod {
@@ -436,7 +452,7 @@ open class InstanceFactoryMock: InstanceFactory, Mock {
 
     public func verify(_ method: Verify, count: Count = Count.moreOrEqual(to: 1), file: StaticString = #file, line: UInt = #line) {
         let invocations = matchingCalls(method.method)
-        MockyAssert(count.matches(invocations.count), "Expected: \(count) invocations of `\(method.method)`, but was: \(invocations.count)", file: file, line: line)
+        MockyAssert(count.matches(invocations.count), "Expected: \(count) invocations of `\(method.method.assertionName())`, but was: \(invocations.count)", file: file, line: line)
     }
 
     private func addInvocation(_ call: MethodType) {

@@ -42,8 +42,8 @@ end
 desc "Deploys new version of a binary, by pushing passed tag"
 task :deploy do
     ARGV.each { |a| task a.to_sym do ; end }
-    version = ARGV[1].to_s
-    if version && !version.to_s.strip.empty?
+    version = ARGV[1].to_s.strip
+    if !version.empty?
         print("Deploying version \"#{version}\":\n")
         # Deploy new CLI version
         sh("git tag #{version} && git push --tags")
