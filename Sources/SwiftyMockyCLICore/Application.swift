@@ -164,6 +164,7 @@ public class Application {
         do {
             let inspector = try InspectionController(project: Path(projectPath), at: pwd)
 
+            try inspector.inspectProject()
             inspector.inspectTools()
             inspector.inspectMockfile()
             Message.empty()

@@ -6,14 +6,40 @@ import XcodeProj
 public class InspectionController {
 
     private let root: Path
-    private var project: XcodeProj
+    private var project: XcodeProj?
     private let projectPath: Path
+    private let isSPM: Bool
 
     public init(project name: Path, at root: Path) throws {
-        let path = try ProjectPathOption.select(project: name, at: root)
-        self.project = try XcodeProj(path: path)
-        self.projectPath = path
-        self.root = root
+        do {
+            let path = try ProjectPathOption.select(project: name, at: root)
+            self.project = try XcodeProj(path: path)
+            self.projectPath = path
+            self.isSPM = false
+            self.root = root
+        } catch MockyError.projectNotFound {
+            self.project = nil
+            self.projectPath = root + "Package.swift"
+            guard FileManager().fileExists(atPath: self.projectPath.absolute().string) else {
+                throw MockyError.projectNotFound
+            }
+            self.isSPM = true
+            self.root = root
+        }
+    }
+
+    // MARK: - Project
+
+    public func inspectProject() throws {
+        if self.project != nil {
+            Message.success("XCode project found at: \(projectPath)")
+        } else if self.isSPM {
+            Message.success("SwiftPM project found at: \(projectPath)")
+            Message.warning("SwiftPM is not fully supported yet, so some manual configuration might be needed.")
+        } else {
+            Message.failure("No valid project found!")
+            throw MockyError.projectNotFound
+        }
     }
 
     // MARK: - Tools
@@ -60,10 +86,16 @@ public class InspectionController {
         inspectMigration()
         guard let mockfile = fetchMockfile() else {
             Message.failure("Mockfile does not exist!")
-            Message.resolutions(
-                "try running \'swiftymocky setup\'",
-                "try running \'swiftymocky migrate\' if you have legacy configurations"
-            )
+            if self.isSPM {
+                Message.resolutions(
+                    "automatic setup is not yet supported in SwiftPM project. Please create Mockfile according to the documentation at https://cdn.rawgit.com/MakeAWishFoundation/SwiftyMocky/4.0.0/docs/mockfile.html"
+                )
+            } else {
+                Message.resolutions(
+                    "try running \'swiftymocky setup\'",
+                    "try running \'swiftymocky migrate\' if you have legacy configurations"
+                )
+            }
             return
         }
 
@@ -79,7 +111,7 @@ public class InspectionController {
         )
 
         guard setup?.migrationPossible() ?? false else { return }
-        
+
         Message.warning("Detected legacy configuration. Please consider migrating to Mockfile")
     }
 
@@ -177,9 +209,10 @@ public class InspectionController {
         }
 
         let allTargetsExists = mock.targets.reduce(into: true) { result, targetName in
-            guard !targetName.hasPrefix("Package.swift/") else { 
+            guard !targetName.hasPrefix("Package.swift/") else {
                 return Message.hint("Omitting target, linting SPM not yet supported")
             }
+            guard let project = self.project else { return }
 
             let found = project.pbxproj.allUnitTestTargets.contains(where: { $0.name == targetName })
             if !found {
@@ -193,6 +226,8 @@ public class InspectionController {
 
     func verifyTargetsIncludeOutput(for mock: MockConfiguration) -> Bool {
         guard !mock.targets.isEmpty else { return false }
+        guard let project = self.project else { return true }
+
         let path: String = {
             if mock.output.hasPrefix("./") {
                 return Path(components: Path(mock.output).components.dropFirst().map({ $0 })).string
@@ -250,7 +285,7 @@ public class InspectionController {
         } else {
             Message.failure("Mock does not define any \'testable\' modules (@testable import <module>)")
             Message.resolutions(
-                "verify Mockfile™ configuration", 
+                "verify Mockfile™ configuration",
                 "add testable modules manually",
                 "run \'swiftymocky setup\' and override configuration (unsafe)"
             )
@@ -264,7 +299,7 @@ public class InspectionController {
             Message.failure("Mock does not define any modules  to \'import\' (import <module>)")
             Message.resolutions(
                 "run \'swiftymocky autoimport\' to automatically resolve modules that needs to be imported",
-                "verify Mockfile™ configuration", 
+                "verify Mockfile™ configuration",
                 "add import manually",
                 "run \'swiftymocky setup\' and override configuration (unsafe)"
             )
