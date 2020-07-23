@@ -15,7 +15,7 @@ import PathKit
 // MARK: - GenerationCommand
 
 open class GenerationCommandMock: GenerationCommand, Mock {
-    init(sequencing sequencingPolicy: SequencingPolicy = .lastWrittenResolvedFirst, stubbing stubbingPolicy: StubbingPolicy = .wrap, file: StaticString = #file, line: UInt = #line) {
+    public init(sequencing sequencingPolicy: SequencingPolicy = .lastWrittenResolvedFirst, stubbing stubbingPolicy: StubbingPolicy = .wrap, file: StaticString = #file, line: UInt = #line) {
         SwiftyMockyTestObserver.setup()
         self.sequencingPolicy = sequencingPolicy
         self.stubbingPolicy = stubbingPolicy
@@ -113,24 +113,29 @@ open class GenerationCommandMock: GenerationCommand, Mock {
         case m_updateAllImports
         case m_updateImports__forMockNamed_name(Parameter<String>)
 
-        static func compareParameters(lhs: MethodType, rhs: MethodType, matcher: Matcher) -> Bool {
+        static func compareParameters(lhs: MethodType, rhs: MethodType, matcher: Matcher) -> Matcher.ComparisonResult {
             switch (lhs, rhs) {
             case (.m_generate__disableCache_disableCacheverbose_verbose(let lhsDisablecache, let lhsVerbose), .m_generate__disableCache_disableCacheverbose_verbose(let rhsDisablecache, let rhsVerbose)):
-                guard Parameter.compare(lhs: lhsDisablecache, rhs: rhsDisablecache, with: matcher) else { return false } 
-                guard Parameter.compare(lhs: lhsVerbose, rhs: rhsVerbose, with: matcher) else { return false } 
-                return true 
+				var results: [Matcher.ParameterComparisonResult] = []
+				results.append(Matcher.ParameterComparisonResult(Parameter.compare(lhs: lhsDisablecache, rhs: rhsDisablecache, with: matcher), lhsDisablecache, rhsDisablecache, "disableCache"))
+				results.append(Matcher.ParameterComparisonResult(Parameter.compare(lhs: lhsVerbose, rhs: rhsVerbose, with: matcher), lhsVerbose, rhsVerbose, "verbose"))
+				return Matcher.ComparisonResult(results)
+
             case (.m_generate__mockName_mockNamedisableCache_disableCacheverbose_verbosewatch_watch(let lhsMockname, let lhsDisablecache, let lhsVerbose, let lhsWatch), .m_generate__mockName_mockNamedisableCache_disableCacheverbose_verbosewatch_watch(let rhsMockname, let rhsDisablecache, let rhsVerbose, let rhsWatch)):
-                guard Parameter.compare(lhs: lhsMockname, rhs: rhsMockname, with: matcher) else { return false } 
-                guard Parameter.compare(lhs: lhsDisablecache, rhs: rhsDisablecache, with: matcher) else { return false } 
-                guard Parameter.compare(lhs: lhsVerbose, rhs: rhsVerbose, with: matcher) else { return false } 
-                guard Parameter.compare(lhs: lhsWatch, rhs: rhsWatch, with: matcher) else { return false } 
-                return true 
-            case (.m_updateAllImports, .m_updateAllImports):
-                return true 
+				var results: [Matcher.ParameterComparisonResult] = []
+				results.append(Matcher.ParameterComparisonResult(Parameter.compare(lhs: lhsMockname, rhs: rhsMockname, with: matcher), lhsMockname, rhsMockname, "mockName"))
+				results.append(Matcher.ParameterComparisonResult(Parameter.compare(lhs: lhsDisablecache, rhs: rhsDisablecache, with: matcher), lhsDisablecache, rhsDisablecache, "disableCache"))
+				results.append(Matcher.ParameterComparisonResult(Parameter.compare(lhs: lhsVerbose, rhs: rhsVerbose, with: matcher), lhsVerbose, rhsVerbose, "verbose"))
+				results.append(Matcher.ParameterComparisonResult(Parameter.compare(lhs: lhsWatch, rhs: rhsWatch, with: matcher), lhsWatch, rhsWatch, "watch"))
+				return Matcher.ComparisonResult(results)
+
+            case (.m_updateAllImports, .m_updateAllImports): return .match
+
             case (.m_updateImports__forMockNamed_name(let lhsName), .m_updateImports__forMockNamed_name(let rhsName)):
-                guard Parameter.compare(lhs: lhsName, rhs: rhsName, with: matcher) else { return false } 
-                return true 
-            default: return false
+				var results: [Matcher.ParameterComparisonResult] = []
+				results.append(Matcher.ParameterComparisonResult(Parameter.compare(lhs: lhsName, rhs: rhsName, with: matcher), lhsName, rhsName, "forMockNamed name"))
+				return Matcher.ComparisonResult(results)
+            default: return .none
             }
         }
 
@@ -240,28 +245,47 @@ open class GenerationCommandMock: GenerationCommand, Mock {
     }
 
     public func verify(_ method: Verify, count: Count = Count.moreOrEqual(to: 1), file: StaticString = #file, line: UInt = #line) {
-        let invocations = matchingCalls(method.method)
-        MockyAssert(count.matches(invocations.count), "Expected: \(count) invocations of `\(method.method.assertionName())`, but was: \(invocations.count)", file: file, line: line)
+        let fullMatches = matchingCalls(method, file: file, line: line)
+        let success = count.matches(fullMatches)
+        let assertionName = method.method.assertionName()
+        let feedback: String = {
+            guard !success else { return "" }
+            return Utils.closestCallsMessage(
+                for: self.invocations.map { invocation in
+                    matcher.set(file: file, line: line)
+                    defer { matcher.clearFileAndLine() }
+                    return MethodType.compareParameters(lhs: invocation, rhs: method.method, matcher: matcher)
+                },
+                name: assertionName
+            )
+        }()
+        MockyAssert(success, "Expected: \(count) invocations of `\(assertionName)`, but was: \(fullMatches).\(feedback)", file: file, line: line)
     }
 
     private func addInvocation(_ call: MethodType) {
         invocations.append(call)
     }
     private func methodReturnValue(_ method: MethodType) throws -> StubProduct {
+        matcher.set(file: self.file, line: self.line)
+        defer { matcher.clearFileAndLine() }
         let candidates = sequencingPolicy.sorted(methodReturnValues, by: { $0.method.intValue() > $1.method.intValue() })
-        let matched = candidates.first(where: { $0.isValid && MethodType.compareParameters(lhs: $0.method, rhs: method, matcher: matcher) })
+        let matched = candidates.first(where: { $0.isValid && MethodType.compareParameters(lhs: $0.method, rhs: method, matcher: matcher).isFullMatch })
         guard let product = matched?.getProduct(policy: self.stubbingPolicy) else { throw MockError.notStubed }
         return product
     }
     private func methodPerformValue(_ method: MethodType) -> Any? {
-        let matched = methodPerformValues.reversed().first { MethodType.compareParameters(lhs: $0.method, rhs: method, matcher: matcher) }
+        matcher.set(file: self.file, line: self.line)
+        defer { matcher.clearFileAndLine() }
+        let matched = methodPerformValues.reversed().first { MethodType.compareParameters(lhs: $0.method, rhs: method, matcher: matcher).isFullMatch }
         return matched?.performs
     }
-    private func matchingCalls(_ method: MethodType) -> [MethodType] {
-        return invocations.filter { MethodType.compareParameters(lhs: $0, rhs: method, matcher: matcher) }
+    private func matchingCalls(_ method: MethodType, file: StaticString?, line: UInt?) -> [MethodType] {
+        matcher.set(file: file ?? self.file, line: line ?? self.line)
+        defer { matcher.clearFileAndLine() }
+        return invocations.filter { MethodType.compareParameters(lhs: $0, rhs: method, matcher: matcher).isFullMatch }
     }
-    private func matchingCalls(_ method: Verify) -> Int {
-        return matchingCalls(method.method).count
+    private func matchingCalls(_ method: Verify, file: StaticString?, line: UInt?) -> Int {
+        return matchingCalls(method.method, file: file, line: line).count
     }
     private func givenGetterValue<T>(_ method: MethodType, _ message: String) -> T {
         do {
@@ -280,14 +304,14 @@ open class GenerationCommandMock: GenerationCommand, Mock {
     }
     private func onFatalFailure(_ message: String) {
         guard let file = self.file, let line = self.line else { return } // Let if fail if cannot handle gratefully
-        SwiftyMockyTestObserver.handleMissingStubError(message: message, file: file, line: line)
+        SwiftyMockyTestObserver.handleFatalError(message: message, file: file, line: line)
     }
 }
 
 // MARK: - InstanceFactory
 
 open class InstanceFactoryMock: InstanceFactory, Mock {
-    init(sequencing sequencingPolicy: SequencingPolicy = .lastWrittenResolvedFirst, stubbing stubbingPolicy: StubbingPolicy = .wrap, file: StaticString = #file, line: UInt = #line) {
+    public init(sequencing sequencingPolicy: SequencingPolicy = .lastWrittenResolvedFirst, stubbing stubbingPolicy: StubbingPolicy = .wrap, file: StaticString = #file, line: UInt = #line) {
         SwiftyMockyTestObserver.setup()
         self.sequencingPolicy = sequencingPolicy
         self.stubbingPolicy = stubbingPolicy
@@ -361,16 +385,19 @@ open class InstanceFactoryMock: InstanceFactory, Mock {
         case m_resolveGenerationCommand__root_root(Parameter<Path>)
         case m_resolveGenerationCommand__root_rootmockfile_mockfile(Parameter<Path>, Parameter<Mockfile>)
 
-        static func compareParameters(lhs: MethodType, rhs: MethodType, matcher: Matcher) -> Bool {
+        static func compareParameters(lhs: MethodType, rhs: MethodType, matcher: Matcher) -> Matcher.ComparisonResult {
             switch (lhs, rhs) {
             case (.m_resolveGenerationCommand__root_root(let lhsRoot), .m_resolveGenerationCommand__root_root(let rhsRoot)):
-                guard Parameter.compare(lhs: lhsRoot, rhs: rhsRoot, with: matcher) else { return false } 
-                return true 
+				var results: [Matcher.ParameterComparisonResult] = []
+				results.append(Matcher.ParameterComparisonResult(Parameter.compare(lhs: lhsRoot, rhs: rhsRoot, with: matcher), lhsRoot, rhsRoot, "root"))
+				return Matcher.ComparisonResult(results)
+
             case (.m_resolveGenerationCommand__root_rootmockfile_mockfile(let lhsRoot, let lhsMockfile), .m_resolveGenerationCommand__root_rootmockfile_mockfile(let rhsRoot, let rhsMockfile)):
-                guard Parameter.compare(lhs: lhsRoot, rhs: rhsRoot, with: matcher) else { return false } 
-                guard Parameter.compare(lhs: lhsMockfile, rhs: rhsMockfile, with: matcher) else { return false } 
-                return true 
-            default: return false
+				var results: [Matcher.ParameterComparisonResult] = []
+				results.append(Matcher.ParameterComparisonResult(Parameter.compare(lhs: lhsRoot, rhs: rhsRoot, with: matcher), lhsRoot, rhsRoot, "root"))
+				results.append(Matcher.ParameterComparisonResult(Parameter.compare(lhs: lhsMockfile, rhs: rhsMockfile, with: matcher), lhsMockfile, rhsMockfile, "mockfile"))
+				return Matcher.ComparisonResult(results)
+            default: return .none
             }
         }
 
@@ -451,28 +478,47 @@ open class InstanceFactoryMock: InstanceFactory, Mock {
     }
 
     public func verify(_ method: Verify, count: Count = Count.moreOrEqual(to: 1), file: StaticString = #file, line: UInt = #line) {
-        let invocations = matchingCalls(method.method)
-        MockyAssert(count.matches(invocations.count), "Expected: \(count) invocations of `\(method.method.assertionName())`, but was: \(invocations.count)", file: file, line: line)
+        let fullMatches = matchingCalls(method, file: file, line: line)
+        let success = count.matches(fullMatches)
+        let assertionName = method.method.assertionName()
+        let feedback: String = {
+            guard !success else { return "" }
+            return Utils.closestCallsMessage(
+                for: self.invocations.map { invocation in
+                    matcher.set(file: file, line: line)
+                    defer { matcher.clearFileAndLine() }
+                    return MethodType.compareParameters(lhs: invocation, rhs: method.method, matcher: matcher)
+                },
+                name: assertionName
+            )
+        }()
+        MockyAssert(success, "Expected: \(count) invocations of `\(assertionName)`, but was: \(fullMatches).\(feedback)", file: file, line: line)
     }
 
     private func addInvocation(_ call: MethodType) {
         invocations.append(call)
     }
     private func methodReturnValue(_ method: MethodType) throws -> StubProduct {
+        matcher.set(file: self.file, line: self.line)
+        defer { matcher.clearFileAndLine() }
         let candidates = sequencingPolicy.sorted(methodReturnValues, by: { $0.method.intValue() > $1.method.intValue() })
-        let matched = candidates.first(where: { $0.isValid && MethodType.compareParameters(lhs: $0.method, rhs: method, matcher: matcher) })
+        let matched = candidates.first(where: { $0.isValid && MethodType.compareParameters(lhs: $0.method, rhs: method, matcher: matcher).isFullMatch })
         guard let product = matched?.getProduct(policy: self.stubbingPolicy) else { throw MockError.notStubed }
         return product
     }
     private func methodPerformValue(_ method: MethodType) -> Any? {
-        let matched = methodPerformValues.reversed().first { MethodType.compareParameters(lhs: $0.method, rhs: method, matcher: matcher) }
+        matcher.set(file: self.file, line: self.line)
+        defer { matcher.clearFileAndLine() }
+        let matched = methodPerformValues.reversed().first { MethodType.compareParameters(lhs: $0.method, rhs: method, matcher: matcher).isFullMatch }
         return matched?.performs
     }
-    private func matchingCalls(_ method: MethodType) -> [MethodType] {
-        return invocations.filter { MethodType.compareParameters(lhs: $0, rhs: method, matcher: matcher) }
+    private func matchingCalls(_ method: MethodType, file: StaticString?, line: UInt?) -> [MethodType] {
+        matcher.set(file: file ?? self.file, line: line ?? self.line)
+        defer { matcher.clearFileAndLine() }
+        return invocations.filter { MethodType.compareParameters(lhs: $0, rhs: method, matcher: matcher).isFullMatch }
     }
-    private func matchingCalls(_ method: Verify) -> Int {
-        return matchingCalls(method.method).count
+    private func matchingCalls(_ method: Verify, file: StaticString?, line: UInt?) -> Int {
+        return matchingCalls(method.method, file: file, line: line).count
     }
     private func givenGetterValue<T>(_ method: MethodType, _ message: String) -> T {
         do {
@@ -491,7 +537,7 @@ open class InstanceFactoryMock: InstanceFactory, Mock {
     }
     private func onFatalFailure(_ message: String) {
         guard let file = self.file, let line = self.line else { return } // Let if fail if cannot handle gratefully
-        SwiftyMockyTestObserver.handleMissingStubError(message: message, file: file, line: line)
+        SwiftyMockyTestObserver.handleFatalError(message: message, file: file, line: line)
     }
 }
 

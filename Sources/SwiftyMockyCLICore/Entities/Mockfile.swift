@@ -9,6 +9,7 @@ import Commander
 public struct Mockfile: Codable {
 
     var sourceryCommand: String?
+    var sourceryTemplate: String?
     var allMocks: [MockConfiguration] { return contents.values.map { $0 } }
     var allMembers: [String] { return contents.keys.map { $0 } }
 
@@ -59,6 +60,8 @@ public struct Mockfile: Codable {
         var container = encoder.container(keyedBy: CodingKeys.self)
 
         try container.encode(sourceryCommand, forKey: .sourceryCommand)
+        try container.encode(sourceryTemplate, forKey: .sourceryTemplate)
+
         try allMembers.sorted().forEach { key in
             try container.encode(self[dynamicMember: key], forKey: .mock(named: key))
         }
@@ -67,11 +70,13 @@ public struct Mockfile: Codable {
     public enum CodingKeys: CodingKey {
 
         case sourceryCommand
+        case sourceryTemplate
         case mock(named: String)
 
         public var stringValue: String {
             switch self {
             case .sourceryCommand: return "sourceryCommand"
+            case .sourceryTemplate: return "sourceryTemplate"
             case .mock(named: let name): return name
             }
         }

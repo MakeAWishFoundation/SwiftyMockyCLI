@@ -13,6 +13,7 @@ public struct MockConfiguration {
     public var `import`: [String]
     public var prototype: Bool
     public var sourcery: [String]
+    public var template: String?
 }
 
 // MARK: - Codable
@@ -27,6 +28,7 @@ extension MockConfiguration: Codable {
         case `import` = "import"
         case prototype
         case sourcery
+        case template
     }
 
     public init(from decoder: Decoder) throws {
@@ -39,6 +41,7 @@ extension MockConfiguration: Codable {
         `import` = (try? container.decode([String].self, forKey: .import)) ?? []
         prototype = (try? container.decode(Bool.self, forKey: .prototype)) ?? false
         sourcery = (try? container.decode([String].self, forKey: .sourcery)) ?? []
+        template = try? container.decode(.template)
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -48,11 +51,12 @@ extension MockConfiguration: Codable {
         try container.encode(sources, forKey: .sources)
         try container.encode(output, forKey: .output)
         // Optional
-        targets.isEmpty ? () : try container.encode(targets, forKey: .targets)
-        testable.isEmpty ? () : try container.encode(testable, forKey: .testable)
-        `import`.isEmpty ? () : try container.encode(`import`, forKey: .import)
-        prototype ? try container.encode(true, forKey: .targets) : ()
-        sourcery.isEmpty ? () : try container.encode(sourcery, forKey: .sourcery)
+        self.targets.isEmpty ? () : try container.encode(self.targets, forKey: .targets)
+        self.testable.isEmpty ? () : try container.encode(self.testable, forKey: .testable)
+        self.import.isEmpty ? () : try container.encode(self.import, forKey: .import)
+        self.prototype ? try container.encode(true, forKey: .targets) : ()
+        self.sourcery.isEmpty ? () : try container.encode(self.sourcery, forKey: .sourcery)
+        self.template == nil ? () : try container.encode(self.template, forKey: .template)
     }
 }
 

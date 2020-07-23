@@ -307,6 +307,18 @@ final class GenerationController: GenerationCommand {
     // MARK: - Helpers
 
     func writeTemplete(for mock: MockConfiguration) throws {
+        try? temp.template.delete()
+
+        if let template = mock.template {
+            Message.info("Using template from \(template)")
+            return try Path(template).copy(temp.template)
+        }
+
+        if let template = mockfile.sourceryTemplate {
+            Message.info("Using template from \(template)")
+            return try Path(template).copy(temp.template)
+        }
+
         if mock.prototype {
             try self.writePrototypeTemplate()
         } else {
