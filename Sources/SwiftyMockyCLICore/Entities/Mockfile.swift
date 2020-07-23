@@ -31,6 +31,7 @@ public struct Mockfile: Codable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
         sourceryCommand = try container.decode(.sourceryCommand)
+        sourceryTemplate = try container.decode(.sourceryTemplate)
         contents = [:]
 
         container.allKeys.forEach { key in
@@ -86,6 +87,8 @@ public struct Mockfile: Codable {
             switch stringValue {
             case CodingKeys.sourceryCommand.stringValue:
                 self = .sourceryCommand
+            case CodingKeys.sourceryTemplate.stringValue:
+                self = .sourceryTemplate
             default:
                 self = .mock(named: stringValue)
             }
