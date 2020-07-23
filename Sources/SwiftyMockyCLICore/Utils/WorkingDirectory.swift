@@ -12,9 +12,13 @@ class WorkingDirectory {
 
     private let root: Path
 
+    // MARK: - Lifecycle
+
     init(root: Path) {
         self.root = root
     }
+
+    // MARK: - Actions
 
     func createDirIfNeeded() throws {
         guard !path.exists else { return }

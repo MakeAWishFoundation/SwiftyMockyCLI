@@ -4,6 +4,8 @@ import PathKit
 import Commander
 import Yams
 
+// MARK: - GenerationCommand protocol definition
+
 public protocol GenerationCommand: AutoMockable {
 
     func generate(disableCache: Bool, verbose: Bool) throws
@@ -11,6 +13,8 @@ public protocol GenerationCommand: AutoMockable {
     func updateAllImports() throws
     func updateImports(forMockNamed name: String) throws
 }
+
+// MARK: - Implementation
 
 final class GenerationController: GenerationCommand {
 
@@ -44,7 +48,9 @@ final class GenerationController: GenerationCommand {
     func generate(disableCache: Bool = false, verbose: Bool = false) throws {
         // Create temporary build directory
         try temp.createDirIfNeeded()
-        try Assets.swifttemplate.mock.write(to: temp.template)
+
+        // Cleanup
+        defer { try? cleanup() }
 
         // Generate mocks for every MockConfiguration
         try mockfile.allMembers.forEach { key in
@@ -53,15 +59,11 @@ final class GenerationController: GenerationCommand {
             Message.actionHeader("Processing mock: \(key) ...")
             try generate(mock, disableCache, verbose, false)
         }
-
-        // Cleanup
-        try cleanup()
     }
 
     func generate(mockName: String, disableCache: Bool, verbose: Bool, watch: Bool) throws {
         // Create temporary build directory
         try temp.createDirIfNeeded()
-        try Assets.swifttemplate.mock.write(to: temp.template)
 
         // Cleanup
         defer { try? cleanup() }
@@ -79,8 +81,8 @@ final class GenerationController: GenerationCommand {
             Message.actionHeader("Processing mock: \(mockName) ...")
         }
 
-        do { 
-            try generate(mock, disableCache, verbose, watch) 
+        do {
+            try generate(mock, disableCache, verbose, watch)
             try cleanup()
         } catch {
             try? cleanup()
@@ -94,7 +96,7 @@ final class GenerationController: GenerationCommand {
         var arguments = [String]()
 
         arguments += ["--config", temp.config.string]
-        
+
         if disableCache {
             arguments += ["--disableCache"]
         }
@@ -112,7 +114,7 @@ final class GenerationController: GenerationCommand {
             at: root.string,
             outputHandle: outputHandle
         )
-        #else 
+        #else
         let resultString = try shellOut(
             to: sourcery.string,
             arguments: arguments,
@@ -136,16 +138,16 @@ final class GenerationController: GenerationCommand {
     }
 
     func processCustomSourceryConfigurations(
-        _ mock: MockConfiguration, 
-        _ disableCache: Bool, 
-        _ verbose: Bool, 
+        _ mock: MockConfiguration,
+        _ disableCache: Bool,
+        _ verbose: Bool,
         _ watch: Bool
     ) throws {
         guard !mock.sourcery.isEmpty else { return }
 
         func launchSourcery(config path: String) throws {
             var arguments: [String] = ["--config", path]
-            
+
             if disableCache {
                 arguments += ["--disableCache"]
             }
@@ -163,7 +165,7 @@ final class GenerationController: GenerationCommand {
                 at: root.string,
                 outputHandle: outputHandle
             )
-            #else 
+            #else
             let resultString = try shellOut(
                 to: sourcery.string,
                 arguments: arguments,
@@ -174,7 +176,7 @@ final class GenerationController: GenerationCommand {
         }
 
         let total = mock.sourcery.count
-        
+
         try mock.sourcery.enumerated().forEach { (offset, configPath) in
             Message.info("\(offset + 1)/\(total) Processing custom Sourcery configuration at: \(configPath)")
             try launchSourcery(config: configPath)
@@ -255,7 +257,7 @@ final class GenerationController: GenerationCommand {
             at: root.string,
             outputHandle: outputHandle
         )
-        #else 
+        #else
         let resultString = try shellOut(
             to: sourcery.string,
             arguments: arguments,
@@ -276,7 +278,7 @@ final class GenerationController: GenerationCommand {
         guard let list: TypesList = try? YAMLDecoder().decode(from: resultsYaml) else {
             return Message.infoPoint("No AutoMockable types found!")
         }
-        
+
         let types = list.types
 
         Message.infoPoint("Found \(types.count) types.")
@@ -306,13 +308,56 @@ final class GenerationController: GenerationCommand {
 
     func writeTemplete(for mock: MockConfiguration) throws {
         if mock.prototype {
-            try Assets.swifttemplate.prototype.write(to: temp.template)
+            try self.writePrototypeTemplate()
         } else {
+            try self.writeMockTemplate()
+        }
+    }
+
+    private func writeMockTemplate() throws {
+        let swiftPM: Path = "./.build/checkouts/SwiftyMocky/Sources/SwiftyMocky/Mock.swifttemplate"
+        let cocoapods: Path = "./Pods/SwiftyMocky/Sources/SwiftyMocky/Mock.swifttemplate"
+        let carthage: Path = "./Carthage/Checkouts/SwiftyMocky/Sources/SwiftyMocky/Mock.swifttemplate"
+        try? temp.template.delete()
+
+        if swiftPM.exists {
+            Message.info("Using template from SwiftPM")
+            try swiftPM.copy(temp.template)
+        } else if cocoapods.exists {
+            Message.info("Using template from Cocoapods")
+            try cocoapods.copy(temp.template)
+        } else if carthage.exists {
+            Message.info("Using template from Carthage")
+            try carthage.copy(temp.template)
+        } else {
+            Message.info("Using template from CLI")
             try Assets.swifttemplate.mock.write(to: temp.template)
         }
     }
 
+    private func writePrototypeTemplate() throws {
+        let swiftPM: Path = "./.build/checkouts/SwiftyMocky/Sources/SwiftyPrototype/Prototype.swifttemplate"
+        let cocoapods: Path = "./Pods/SwiftyMocky/Sources/SwiftyPrototype/Prototype.swifttemplate"
+        let carthage: Path = "./Carthage/Checkouts/SwiftyMocky/Sources/SwiftyPrototype/Prototype.swifttemplate"
+        try? temp.template.delete()
+
+        if swiftPM.exists {
+            Message.info("Using template from SwiftPM")
+            try swiftPM.copy(temp.template)
+        } else if cocoapods.exists {
+            Message.info("Using template from Cocoapods")
+            try cocoapods.copy(temp.template)
+        } else if carthage.exists {
+            Message.info("Using template from Carthage")
+            try carthage.copy(temp.template)
+        } else {
+            Message.info("Using template from CLI")
+            try Assets.swifttemplate.prototype.write(to: temp.template)
+        }
+    }
 }
+
+// MARK: - Path + MockConfiguration sources
 
 private extension Path {
 
@@ -343,7 +388,10 @@ private extension Path {
     }
 }
 
+// MARK: - String + declarations and regex matching
+
 private extension String {
+
     func containsDeclaration(forAnyOf types: [String]) -> Bool {
         for type in types {
             if !matches(for: "protocol( )+\(type)").isEmpty {

@@ -18,6 +18,7 @@ public struct MockConfiguration {
 // MARK: - Codable
 
 extension MockConfiguration: Codable {
+
     public enum CodingKeys: String, CodingKey {
         case sources
         case output
@@ -58,6 +59,8 @@ extension MockConfiguration: Codable {
 // MARK: - MockConfiguration config and Sources
 
 public extension MockConfiguration {
+
+    var isMock: Bool { return !self.prototype }
 
     init(config: LegacyConfiguration) {
         self.sources = config.sources.sorted()
