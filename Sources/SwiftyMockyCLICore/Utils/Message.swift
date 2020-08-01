@@ -50,7 +50,7 @@ public enum Message {
     }
 
     public static func actionHeader(_ message: String) {
-        let styled = ck.bold.bg(.darkGreen).whiteBright.on(message)
+        let styled = ck.bold.bg(RainbowColor.Material.green900).whiteBright.on(message)
         just("\(styled)")
     }
 
@@ -88,7 +88,7 @@ public enum Message {
     public static func resolutions(array messages: [String], title: String = "Possible solutions:") {
         indent()
         just("\(ck.underline.gray.on(title))")
-        messages.forEach { 
+        messages.forEach {
             let styled = ck.gray.on(" - \($0)")
             just("\(styled)")
         }

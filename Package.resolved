@@ -42,8 +42,8 @@
         "repositoryURL": "https://github.com/luoxiu/Rainbow",
         "state": {
           "branch": null,
-          "revision": "438720f94da08582aff2abc4712de1c23f464d45",
-          "version": "0.0.5"
+          "revision": "9d8fcb4c64e816a135c31162a0c319e9f1f09c35",
+          "version": "0.1.1"
         }
       },
       {
@@ -69,7 +69,7 @@
         "repositoryURL": "https://github.com/MakeAWishFoundation/SwiftyMocky.git",
         "state": {
           "branch": "develop",
-          "revision": "801ff2176b1e0c255a4e6117e7677bb1f80c6d7f",
+          "revision": "78e6f6681f8a20f5ceb57c3a8a8bdcc39a6ae2ac",
           "version": null
         }
       },
@@ -78,8 +78,8 @@
         "repositoryURL": "https://github.com/tuist/xcodeproj.git",
         "state": {
           "branch": null,
-          "revision": "6eaf24df094990f74bb3459f3e5d7bce44c2163a",
-          "version": "7.11.1"
+          "revision": "81bb2bb333eafa68f8ecd8187a4bb56d51e78e97",
+          "version": "7.14.0"
         }
       },
       {

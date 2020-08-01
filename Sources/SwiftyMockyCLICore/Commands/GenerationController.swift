@@ -19,7 +19,7 @@ public protocol GenerationCommand: AutoMockable {
 final class GenerationController: GenerationCommand {
 
     private let root: Path
-    private let sourcery: Path
+    private let sourcery: String
     private let temp: WorkingDirectory
     private var mockfile: Mockfile
     private let mockfilePath: Path
@@ -32,7 +32,7 @@ final class GenerationController: GenerationCommand {
         self.temp = WorkingDirectory(root: root)
         self.mockfilePath = root + "Mockfile"
         self.mockfile = try Mockfile(path: mockfilePath)
-        self.sourcery = Path(mockfile.sourceryCommand ?? sourcery.string)
+        self.sourcery = mockfile.sourceryCommand ?? sourcery.string
     }
 
     init(root: Path, mockfile: Mockfile, sourcery: Path = kDefaultSourceryCommand) {
@@ -40,7 +40,7 @@ final class GenerationController: GenerationCommand {
         self.temp = WorkingDirectory(root: root)
         self.mockfilePath = root + "Mockfile"
         self.mockfile = mockfile
-        self.sourcery = Path(mockfile.sourceryCommand ?? sourcery.string)
+        self.sourcery = mockfile.sourceryCommand ?? sourcery.string
     }
 
     // MARK: - Generation
@@ -109,14 +109,14 @@ final class GenerationController: GenerationCommand {
 
         #if os(macOS)
         try shellOut(
-            to: sourcery.string,
+            to: sourcery,
             arguments: arguments,
             at: root.string,
             outputHandle: outputHandle
         )
         #else
         let resultString = try shellOut(
-            to: sourcery.string,
+            to: sourcery,
             arguments: arguments,
             at: root.string
         )
@@ -160,14 +160,14 @@ final class GenerationController: GenerationCommand {
 
             #if os(macOS)
             try shellOut(
-                to: sourcery.string,
+                to: sourcery,
                 arguments: arguments,
                 at: root.string,
                 outputHandle: outputHandle
             )
             #else
             let resultString = try shellOut(
-                to: sourcery.string,
+                to: sourcery,
                 arguments: arguments,
                 at: root.string
             )
@@ -252,14 +252,14 @@ final class GenerationController: GenerationCommand {
 
         #if os(macOS)
         try shellOut(
-            to: sourcery.string,
+            to: sourcery,
             arguments: arguments,
             at: root.string,
             outputHandle: outputHandle
         )
         #else
         let resultString = try shellOut(
-            to: sourcery.string,
+            to: sourcery,
             arguments: arguments,
             at: root.string
         )

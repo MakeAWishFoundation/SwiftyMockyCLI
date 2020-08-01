@@ -30,8 +30,10 @@ public struct Mockfile: Codable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
-        sourceryCommand = try container.decode(.sourceryCommand)
-        sourceryTemplate = try container.decode(.sourceryTemplate)
+        sourceryCommand = try? container.decode(.sourceryCommand)
+        sourceryCommand = sourceryCommand.sanitizeNull()
+        sourceryTemplate = try? container.decode(.sourceryTemplate)
+        sourceryTemplate = sourceryTemplate.sanitizeNull()
         contents = [:]
 
         container.allKeys.forEach { key in
@@ -105,5 +107,13 @@ public struct Mockfile: Codable {
 extension KeyedDecodingContainer where K : CodingKey {
     func decode<T: Decodable>(_ key: K) throws -> T {
         return try decode(T.self, forKey: key)
+    }
+}
+
+private extension Optional where Wrapped == String {
+
+    func sanitizeNull() -> String? {
+        guard let value = self, value != "null" else { return nil }
+        return self
     }
 }
