@@ -21,7 +21,7 @@ public struct Messages {
                                 --watch, -w         \(Messages.Generate.watcher)
             """
         public static let verbose = "additional sourcery debug info"
-        public static let disableCache = "disables using cahche"
+        public static let disableCache = "disables using cache"
         public static let watcher = "run in watcher mode, allowed only if mock name specified"
     }
     public struct Doctor {
