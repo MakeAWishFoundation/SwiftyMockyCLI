@@ -95,7 +95,7 @@ final class GenerationController: GenerationCommand {
         try temp.create(config: generateMocks)
         var arguments = [String]()
 
-        arguments += ["--config", temp.config.string]
+        arguments += ["--config", "\"\(temp.config.string)\""]
 
         if disableCache {
             arguments += ["--disableCache"]
@@ -146,7 +146,7 @@ final class GenerationController: GenerationCommand {
         guard !mock.sourcery.isEmpty else { return }
 
         func launchSourcery(config path: String) throws {
-            var arguments: [String] = ["--config", path]
+            var arguments: [String] = ["--config", "\"\(path)\""]
 
             if disableCache {
                 arguments += ["--disableCache"]
@@ -241,14 +241,14 @@ final class GenerationController: GenerationCommand {
         try temp.createDirIfNeeded()
         try Assets.swifttemplate.allTypes.write(to: temp.template)
 
-        let typesFilePath = temp.path + Path("types.yaml")
+        let typesFilePath = (temp.path + Path("types.yaml"))
         try? typesFilePath.delete()
         let config = mock.configuration(template: temp.template)
         try temp.create(config: config, output: typesFilePath.absolute().string)
 
         var arguments = [String]()
 
-        arguments += ["--config", temp.config.string]
+        arguments += ["--config", "\"\(temp.config.string)\""]
 
         #if os(macOS)
         try shellOut(

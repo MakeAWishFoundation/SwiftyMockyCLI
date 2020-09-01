@@ -11,8 +11,7 @@ let package = Package(
         .executable(name: "swiftymocky", targets: ["SwiftyMockyCLI"]),
     ],
     dependencies: [
-        // .package(url: "https://github.com/MakeAWishFoundation/SwiftyMocky.git", .branch("develop")),
-        .package(url: "https://github.com/MakeAWishFoundation/SwiftyMocky.git", from: "4.0.0"),
+        .package(url: "https://github.com/MakeAWishFoundation/SwiftyMocky.git", from: "4.0.1"),
         .package(url: "https://github.com/JohnSundell/ShellOut.git", from: "2.3.0"),
         .package(url: "https://github.com/tuist/xcodeproj.git", from: "7.1.0"),
         .package(url: "https://github.com/luoxiu/Chalk", .exact("0.0.7")),
