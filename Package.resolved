@@ -15,8 +15,8 @@
         "repositoryURL": "https://github.com/luoxiu/Chalk",
         "state": {
           "branch": null,
-          "revision": "b525ab2c82a379911dfa051a6b7225617708e173",
-          "version": "0.0.7"
+          "revision": "8a9d3373bd754fb62f7881d9f639d376f5e4d5a5",
+          "version": "0.2.1"
         }
       },
       {
@@ -48,7 +48,7 @@
       },
       {
         "package": "ShellOut",
-        "repositoryURL": "https://github.com/JohnSundell/ShellOut.git",
+        "repositoryURL": "https://github.com/JohnSundell/ShellOut",
         "state": {
           "branch": null,
           "revision": "e1577acf2b6e90086d01a6d5e2b8efdaae033568",
@@ -65,17 +65,8 @@
         }
       },
       {
-        "package": "swiftymocky",
-        "repositoryURL": "https://github.com/MakeAWishFoundation/SwiftyMocky.git",
-        "state": {
-          "branch": null,
-          "revision": "5cae2006d61247b63a8b0c27ff4d3a6fae294bcf",
-          "version": "4.0.4"
-        }
-      },
-      {
         "package": "XcodeProj",
-        "repositoryURL": "https://github.com/tuist/xcodeproj.git",
+        "repositoryURL": "https://github.com/tuist/xcodeproj",
         "state": {
           "branch": null,
           "revision": "446f3a0db73e141c7f57e26fcdb043096b1db52c",
@@ -84,7 +75,7 @@
       },
       {
         "package": "Yams",
-        "repositoryURL": "https://github.com/jpsim/Yams.git",
+        "repositoryURL": "https://github.com/jpsim/Yams",
         "state": {
           "branch": null,
           "revision": "81a65c4069c28011ee432f2858ba0de49b086677",

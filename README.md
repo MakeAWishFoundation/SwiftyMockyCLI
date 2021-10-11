@@ -8,11 +8,17 @@
 
 # ![logo][logo]
 
+# POTENTIALLY DEPRECATED!
+
+CLI was moved back to main repo, [SwiftyMocky](https://github.com/MakeAWishFoundation/SwiftyMocky)
+
+This repo will mirror CLI code until version 5.x, unless having CLI in main project proves unusable in any of the important cenarios. So, we will make a final decision around version 5 release, until then, you can use either repo.
+
 <a name="overview"></a>
 
 ## Overview
 
-This is a **CLI** counterpart for the project [SwiftyMocky](https://github.com/MakeAWishFoundation/SwiftyMocky).
+This is a **CLI** for the project [SwiftyMocky](https://github.com/MakeAWishFoundation/SwiftyMocky).
 
 For the documentation and guides, plese refer to the main [SwiftyMocky repository](https://github.com/MakeAWishFoundation/SwiftyMocky) or [SwiftyMocky documentation][link-docs].
 
@@ -22,15 +28,18 @@ For the documentation and guides, plese refer to the main [SwiftyMocky repositor
 
 ```bash
 % brew install mint
-% mint install MakeAWishFoundation/SwiftyMocky-CLI
+% mint install MakeAWishFoundation/SwiftyMocky
 ```
 
 **[Marathon 🏃](https://github.com/JohnSundell/Marathon)**:
 
 ```bash
-% marathon install MakeAWishFoundation/SwiftyMocky-CLI
+% marathon install MakeAWishFoundation/SwiftyMocky
 ```
+
 **Make**:
+
+Clone https://github.com/MakeAWishFoundation/SwiftyMocky and:
 
 ```bash
 % make install
@@ -53,4 +62,4 @@ SwiftyMocky-CLI is available under the MIT license. See the [LICENSE][link-licen
 
 [link-license]: ./LICENSE
 [link-docs]: https://cdn.rawgit.com/MakeAWishFoundation/SwiftyMocky/4.0.1/docs/index.html
-[logo]: https://raw.githubusercontent.com/MakeAWishFoundation/SwiftyMocky/4.0.1/icon.png
+[logo]: https://raw.githubusercontent.com/MakeAWishFoundation/SwiftyMocky/4.1.0-pre/icon.png
